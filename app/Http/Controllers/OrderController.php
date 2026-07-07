@@ -55,7 +55,7 @@ class OrderController extends Controller
                 'photos' => $item->product->photos->map(function ($photo) {
                   return [
                     'id' => $photo->id,
-                    'photo_url' => $photo->url
+                    'url' => $photo->url
                   ];
                 })
               ],
@@ -142,8 +142,8 @@ class OrderController extends Controller
         ];
       }
 
-      // Add tax (10%)
-      $taxAmount = $subtotalAmount * 0.1;
+      // Add tax
+      $taxAmount = $subtotalAmount * config('pos.tax_rate');
       $totalAmount = $subtotalAmount + $taxAmount;
 
       // Create order
@@ -222,7 +222,7 @@ class OrderController extends Controller
   public function edit(Order $order)
   {
     $order->load(['orderItems.product', 'payment']);
-    $products = Product::with('photos')->where('is_active', true)->get();
+    $products = Product::with('photos')->get();
 
     return Inertia::render('admin/orders/edit', [
       'order' => $order,

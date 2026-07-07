@@ -2,59 +2,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { type Order, type ProductPhoto } from '@/types/models';
 import { Head, router } from '@inertiajs/react';
 import { ArrowLeft, CheckCircle, Clock, ImageIcon, Receipt, RefreshCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
-
-// Types
-interface ProductPhoto {
-    id: number;
-    product_id: string;
-    url: string;
-    is_primary: boolean;
-    created_at: string;
-    updated_at: string;
-}
-
-interface Product {
-    id: string;
-    name: string;
-    price: number;
-    category?: {
-        id: number;
-        name: string;
-    };
-    photos?: ProductPhoto[];
-}
-
-interface OrderItem {
-    id: number;
-    order_id: number;
-    product_id: string;
-    quantity: number;
-    notes?: string;
-    product: Product;
-}
-
-interface Payment {
-    id: number;
-    order_id: number;
-    amount: number;
-    status: string;
-    payment_method: string;
-    paid_at?: string;
-}
-
-interface Order {
-    id: number;
-    customer_name: string;
-    table_number: number;
-    status: string;
-    created_at: string;
-    updated_at: string;
-    order_items: OrderItem[];
-    payment: Payment;
-}
 
 interface Props {
     order: Order;

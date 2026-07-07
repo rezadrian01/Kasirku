@@ -27,13 +27,12 @@ Route::prefix('order')->group(function () {
     Route::get('/{orderId}/check', [CheckoutController::class, 'checkOrderStatus'])->name('order.check');
 });
 
-// !important: This route will be using middleware 'auth' and 'verified' in the admin prefix group
-Route::POST('/print', [PrintController::class, 'index'])->name('print.index');
-
 Route::prefix('admin')->middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
         return Inertia::render('admin/dashboard/index');
     })->name('admin.dashboard');
+
+    Route::post('print', [PrintController::class, 'index'])->name('print.index');
 
     // Resource route for CategoryController
     Route::resource('categories', CategoryController::class);

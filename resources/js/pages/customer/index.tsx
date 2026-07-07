@@ -5,54 +5,15 @@ import { Carousel, CarouselContent, CarouselIndicators, CarouselItem, CarouselNe
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { type CartItem, type Category, type Pagination, type Product, type ProductPhoto } from '@/types/models';
 import { Head, router } from '@inertiajs/react';
 import { ImageIcon, Minus, Plus, SearchIcon, ShoppingCart, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-// Types
-interface Category {
-    id: number;
-    name: string;
-    created_at: string;
-    updated_at: string;
-}
-
-interface ProductPhoto {
-    id: number;
-    product_id: string;
-    url: string;
-    is_primary: boolean;
-    created_at: string;
-    updated_at: string;
-}
-
-interface Product {
-    id: string;
-    name: string;
-    category_id: number;
-    price: number;
-    created_at: string;
-    updated_at: string;
-    category?: Category;
-    photos?: ProductPhoto[];
-}
-
-interface CartItem {
-    product: Product;
-    quantity: number;
-    notes?: string;
-}
-
 interface Props {
     products: Product[];
     categories: Category[];
-    pagination?: {
-        current_page: number;
-        last_page: number;
-        per_page: number;
-        total: number;
-        has_more_pages: boolean;
-    };
+    pagination?: Pagination;
 }
 
 export default function CustomerIndex({ products: initialProducts, categories, pagination }: Props) {

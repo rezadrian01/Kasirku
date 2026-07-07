@@ -2,10 +2,12 @@
 
 namespace Database\Factories;
 
+use App\Models\Product;
+use App\Models\ProductPhotos;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\ProductPhotos>
+ * @extends Factory<ProductPhotos>
  */
 class ProductPhotosFactory extends Factory
 {
@@ -17,7 +19,9 @@ class ProductPhotosFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'product_id' => Product::factory(),
+            'url' => fake()->imageUrl(640, 480, 'food'),
+            'is_primary' => true,
         ];
     }
 }

@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { TAX_RATE } from '@/lib/constants';
+import { type CartItem, type ProductPhoto } from '@/types/models';
 import { Head, router } from '@inertiajs/react';
 import { AlertCircle, ArrowLeft, ImageIcon, ShoppingCart } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -12,36 +14,6 @@ declare global {
     interface Window {
         snap: any;
     }
-}
-
-// Types
-interface ProductPhoto {
-    id: number;
-    product_id: string;
-    url: string;
-    is_primary: boolean;
-    created_at: string;
-    updated_at: string;
-}
-
-interface Product {
-    id: string;
-    name: string;
-    category_id: number;
-    price: number;
-    created_at: string;
-    updated_at: string;
-    category?: {
-        id: number;
-        name: string;
-    };
-    photos?: ProductPhoto[];
-}
-
-interface CartItem {
-    product: Product;
-    quantity: number;
-    notes?: string;
 }
 
 export default function CheckoutIndex() {
@@ -126,7 +98,7 @@ export default function CheckoutIndex() {
     };
 
     const getTaxAmount = () => {
-        return getSubtotal() * 0.1; // 10% tax
+        return getSubtotal() * TAX_RATE;
     };
 
     const getTotalPrice = () => {
@@ -334,7 +306,7 @@ export default function CheckoutIndex() {
                                         <span>{formatCurrency(getSubtotal())}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
-                                        <span>Pajak (10%)</span>
+                                        <span>Pajak ({TAX_RATE * 100}%)</span>
                                         <span>{formatCurrency(getTaxAmount())}</span>
                                     </div>
                                     <Separator />

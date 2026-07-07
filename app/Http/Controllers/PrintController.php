@@ -69,14 +69,15 @@ class PrintController extends Controller
             $formattedText .= $itemLine . "|" . $priceFormatted . "\n";
         }
 
-        // Calculate tax (10%)
-        $tax = $subtotal * 0.1;
+        // Calculate tax
+        $taxRate = config('pos.tax_rate');
+        $tax = $subtotal * $taxRate;
         $total = $subtotal + $tax;
 
         // Add summary to text
         $formattedText .= "SUMMARY\n";
         $formattedText .= "Subtotal|Rp " . number_format($subtotal, 0, ',', '.') . "\n";
-        $formattedText .= "Pajak (10%)|Rp " . number_format($tax, 0, ',', '.') . "\n";
+        $formattedText .= "Pajak (" . ($taxRate * 100) . "%)|Rp " . number_format($tax, 0, ',', '.') . "\n";
         $formattedText .= "TOTAL|Rp " . number_format($total, 0, ',', '.') . "\n";
 
         // Add payment info if provided

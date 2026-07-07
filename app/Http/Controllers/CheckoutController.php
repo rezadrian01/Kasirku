@@ -6,22 +6,16 @@ use App\Models\Order;
 use App\Models\OrderItems;
 use App\Models\Payment;
 use App\Models\Product;
+use App\Services\MidtransService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
-use Midtrans\Config;
-use Midtrans\Snap;
 
 class CheckoutController extends Controller
 {
-  public function __construct()
+  public function __construct(private MidtransService $midtransService)
   {
-    // Set Midtrans configuration
-    Config::$serverKey = config('services.midtrans.server_key');
-    Config::$isProduction = config('services.midtrans.is_production');
-    Config::$isSanitized = config('services.midtrans.is_sanitized');
-    Config::$is3ds = config('services.midtrans.is_3ds');
   }
 
   public function index()
@@ -55,19 +49,22 @@ class CheckoutController extends Controller
       // Create order items and calculate subtotal
       foreach ($request->cart as $cartItem) {
         $product = Product::findOrFail($cartItem['product']['id']);
+        $itemSubtotal = $product->price * $cartItem['quantity'];
 
         OrderItems::create([
           'order_id' => $order->id,
           'product_id' => $product->id,
           'quantity' => $cartItem['quantity'],
           'notes' => $cartItem['notes'] ?? null,
+          'price' => $product->price,
+          'subtotal' => $itemSubtotal,
         ]);
 
-        $subtotalAmount += $product->price * $cartItem['quantity'];
+        $subtotalAmount += $itemSubtotal;
       }
 
-      // Calculate tax (10%) and total amount
-      $taxAmount = $subtotalAmount * 0.1;
+      // Calculate tax and total amount
+      $taxAmount = $subtotalAmount * config('pos.tax_rate');
       $totalAmount = $subtotalAmount + $taxAmount;
 
       // Create payment record
@@ -107,7 +104,7 @@ class CheckoutController extends Controller
               'id' => 'TAX',
               'price' => (int) $taxAmount,
               'quantity' => 1,
-              'name' => 'Pajak (10%)',
+              'name' => 'Pajak (' . (config('pos.tax_rate') * 100) . '%)',
             ]
           ]
         ),
@@ -123,10 +120,10 @@ class CheckoutController extends Controller
         'subtotal' => $subtotalAmount,
         'tax_amount' => $taxAmount,
         'total_amount' => $totalAmount,
-        'tax_percentage' => '10%'
+        'tax_rate' => config('pos.tax_rate'),
       ]);
 
-      $snapToken = Snap::getSnapToken($params);
+      $snapToken = $this->midtransService->createSnapToken($params);
 
       // Update payment with transaction ID from Midtrans
       $payment->update([
@@ -174,48 +171,58 @@ class CheckoutController extends Controller
     try {
       $notification = new \Midtrans\Notification();
 
-      $transactionStatus = $notification->transaction_status;
-      $paymentType = $notification->payment_type;
-      $orderId = $notification->order_id;
-      $fraudStatus = $notification->fraud_status;
-
-      $payment = Payment::where('transaction_id', $orderId)->firstOrFail();
-      $order = $payment->order;
-
-      if ($transactionStatus == 'capture') {
-        if ($paymentType == 'credit_card') {
-          if ($fraudStatus == 'challenge') {
-            $payment->update(['status' => 'pending']);
-          } else {
-            $payment->update([
-              'status' => 'completed',
-              'paid_at' => now(),
-            ]);
-            $order->update(['status' => 'pending']);
-          }
-        }
-      } elseif ($transactionStatus == 'settlement') {
-        $payment->update([
-          'status' => 'completed',
-          'paid_at' => now(),
-        ]);
-        $order->update(['status' => 'pending']);
-      } elseif ($transactionStatus == 'pending') {
-        $payment->update(['status' => 'pending']);
-      } elseif ($transactionStatus == 'deny') {
-        $payment->update(['status' => 'failed']);
-        $order->update(['status' => 'cancelled']);
-      } elseif ($transactionStatus == 'expire') {
-        $payment->update(['status' => 'failed']);
-        $order->update(['status' => 'cancelled']);
-      } elseif ($transactionStatus == 'cancel') {
-        $payment->update(['status' => 'failed']);
-        $order->update(['status' => 'cancelled']);
-      }
+      $this->applyTransactionStatus(
+        $notification->transaction_status,
+        $notification->payment_type,
+        $notification->order_id,
+        $notification->fraud_status
+      );
 
       return response()->json(['status' => 'success']);
     } catch (\Exception $e) {
       return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+    }
+  }
+
+  /**
+   * Apply a Midtrans transaction status to the matching payment/order.
+   * Split out from paymentNotification() so the state-transition logic
+   * can be tested without instantiating the real Midtrans SDK.
+   */
+  public function applyTransactionStatus(string $transactionStatus, ?string $paymentType, string $orderId, ?string $fraudStatus): void
+  {
+    $payment = Payment::where('transaction_id', $orderId)->firstOrFail();
+    $order = $payment->order;
+
+    if ($transactionStatus == 'capture') {
+      if ($paymentType == 'credit_card') {
+        if ($fraudStatus == 'challenge') {
+          $payment->update(['status' => 'pending']);
+        } else {
+          $payment->update([
+            'status' => 'completed',
+            'paid_at' => now(),
+          ]);
+          $order->update(['status' => 'pending']);
+        }
+      }
+    } elseif ($transactionStatus == 'settlement') {
+      $payment->update([
+        'status' => 'completed',
+        'paid_at' => now(),
+      ]);
+      $order->update(['status' => 'pending']);
+    } elseif ($transactionStatus == 'pending') {
+      $payment->update(['status' => 'pending']);
+    } elseif ($transactionStatus == 'deny') {
+      $payment->update(['status' => 'failed']);
+      $order->update(['status' => 'cancelled']);
+    } elseif ($transactionStatus == 'expire') {
+      $payment->update(['status' => 'failed']);
+      $order->update(['status' => 'cancelled']);
+    } elseif ($transactionStatus == 'cancel') {
+      $payment->update(['status' => 'failed']);
+      $order->update(['status' => 'cancelled']);
     }
   }
 

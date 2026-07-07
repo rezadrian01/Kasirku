@@ -4,7 +4,7 @@
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Laravel](https://img.shields.io/badge/Laravel-12.x-red.svg)
-![React](https://img.shields.io/badge/React-18.x-blue.svg)
+![React](https://img.shields.io/badge/React-19.x-blue.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)
 
 ## ✨ Key Features
@@ -78,7 +78,7 @@ _Admin products management dashboard for managing inventory and orders_
 
 ### Frontend
 
-- **React 18** - User interface library
+- **React 19** - User interface library
 - **TypeScript** - Type-safe JavaScript
 - **Tailwind CSS** - Utility-first CSS framework
 - **shadcn/ui** - Modern UI components

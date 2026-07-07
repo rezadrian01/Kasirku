@@ -8,37 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
+import { type Category, type Pagination, type Product, type ProductPhoto } from '@/types/models';
 import { Head, router } from '@inertiajs/react';
 import { EditIcon, ImageIcon, PlusIcon, SearchIcon, TrashIcon, UploadIcon, XIcon } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-
-// Types
-interface Category {
-    id: number;
-    name: string;
-    created_at: string;
-    updated_at: string;
-}
-
-interface ProductPhoto {
-    id: number;
-    product_id: string;
-    url: string;
-    is_primary: boolean;
-    created_at: string;
-    updated_at: string;
-}
-
-interface Product {
-    id: string;
-    name: string;
-    category_id: number;
-    price: number;
-    created_at: string;
-    updated_at: string;
-    category?: Category;
-    photos?: ProductPhoto[];
-}
 
 interface ProductFormData {
     name: string;
@@ -51,13 +24,7 @@ interface ProductFormData {
 interface Props {
     products: Product[];
     categories: Category[];
-    pagination?: {
-        current_page: number;
-        last_page: number;
-        per_page: number;
-        total: number;
-        has_more_pages: boolean;
-    };
+    pagination?: Pagination;
 }
 
 const breadcrumbs: BreadcrumbItem[] = [

@@ -6,25 +6,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
+import { type Category } from '@/types/models';
 import { Head, router } from '@inertiajs/react';
 import { CalendarIcon, EditIcon, FolderIcon, PlusIcon, SearchIcon, TrashIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-// Types
-interface Category {
-    id: number;
-    name: string;
-    created_at: string;
-    updated_at: string;
-    products_count: number; // Laravel withCount will always return this
-}
+// This page's controller always eager-loads the count via withCount('products').
+type CategoryWithCount = Category & { products_count: number };
 
 interface CategoryFormData {
     name: string;
 }
 
 interface Props {
-    categories: Category[];
+    categories: CategoryWithCount[];
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -40,12 +35,12 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function CategoriesIndex({ categories: initialCategories }: Props) {
     // State
-    const [categories, setCategories] = useState<Category[]>(initialCategories);
+    const [categories, setCategories] = useState<CategoryWithCount[]>(initialCategories);
     const [searchTerm, setSearchTerm] = useState('');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-    const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+    const [selectedCategory, setSelectedCategory] = useState<CategoryWithCount | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
     const [formData, setFormData] = useState<CategoryFormData>({
@@ -138,7 +133,7 @@ export default function CategoriesIndex({ categories: initialCategories }: Props
     };
 
     // Open edit modal with selected category data
-    const openEditModal = (category: Category) => {
+    const openEditModal = (category: CategoryWithCount) => {
         setSelectedCategory(category);
         setFormData({
             name: category.name,
@@ -147,7 +142,7 @@ export default function CategoriesIndex({ categories: initialCategories }: Props
     };
 
     // Open delete modal
-    const openDeleteModal = (category: Category) => {
+    const openDeleteModal = (category: CategoryWithCount) => {
         setSelectedCategory(category);
         setIsDeleteModalOpen(true);
     };

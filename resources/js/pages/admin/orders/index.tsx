@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
+import { TAX_RATE } from '@/lib/constants';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
@@ -31,9 +32,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 interface OrderItem {
     id: number;
     product: {
-        id: number;
+        id: string;
         name: string;
-        photos: Array<{ id: number; photo_url: string }>;
+        photos: Array<{ id: number; url: string }>;
     };
     quantity: number;
     price: number;
@@ -64,10 +65,9 @@ interface Order {
 }
 
 interface Product {
-    id: number;
+    id: string;
     name: string;
     price: number;
-    stock: number;
     photos: Array<{
         id: number;
         url: string;
@@ -75,7 +75,7 @@ interface Product {
 }
 
 interface CartItem {
-    product_id: number;
+    product_id: string;
     product: Product;
     quantity: number;
     subtotal: number;
@@ -105,7 +105,7 @@ interface OrderFormData {
     payment_method: string;
     table_number: number;
     status?: string; // Order status for editing
-    items: { product_id: number; quantity: number }[];
+    items: { product_id: string; quantity: number }[];
     [key: string]: any;
 }
 
@@ -354,7 +354,7 @@ export default function OrdersIndex({ orders, products, filters }: Props) {
         }
     };
 
-    const updateQuantity = (productId: number, newQuantity: number) => {
+    const updateQuantity = (productId: string, newQuantity: number) => {
         if (newQuantity <= 0) {
             removeFromCart(productId);
             return;
@@ -374,7 +374,7 @@ export default function OrdersIndex({ orders, products, filters }: Props) {
         );
     };
 
-    const removeFromCart = (productId: number) => {
+    const removeFromCart = (productId: string) => {
         setCart(cart.filter((item) => item.product_id !== productId));
     };
 
@@ -383,7 +383,7 @@ export default function OrdersIndex({ orders, products, filters }: Props) {
     };
 
     const getTaxAmount = () => {
-        return getSubtotal() * 0.1; // 10% tax
+        return getSubtotal() * TAX_RATE;
     };
 
     const getTotalAmount = () => {
@@ -418,7 +418,6 @@ export default function OrdersIndex({ orders, products, filters }: Props) {
         const formDataToSend = {
             ...formData,
             items,
-            tax_rate: 0.1, // 10% tax rate
         };
 
         try {
@@ -450,12 +449,12 @@ export default function OrdersIndex({ orders, products, filters }: Props) {
                     order_type: 'admin',
                     notes: null, // Not stored in database
                     created_at: new Date().toISOString(),
-                    order_items: cart.map((item) => ({
-                        id: item.product_id,
+                    order_items: cart.map((item, index) => ({
+                        id: index + 1,
                         product: {
                             id: item.product.id,
                             name: item.product.name,
-                            photos: item.product.photos.map((p) => ({ id: p.id, photo_url: p.url })),
+                            photos: item.product.photos.map((p) => ({ id: p.id, url: p.url })),
                         },
                         quantity: item.quantity,
                         price: item.product.price,
@@ -623,7 +622,7 @@ export default function OrdersIndex({ orders, products, filters }: Props) {
         try {
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
-            const response = await fetch('/print', {
+            const response = await fetch('/admin/print', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -775,7 +774,7 @@ export default function OrdersIndex({ orders, products, filters }: Props) {
                                                             <span>{formatCurrency(getSubtotal())}</span>
                                                         </div>
                                                         <div className="flex items-center justify-between text-sm">
-                                                            <span>Tax (10%):</span>
+                                                            <span>Tax ({TAX_RATE * 100}%):</span>
                                                             <span>{formatCurrency(getTaxAmount())}</span>
                                                         </div>
                                                         <div className="flex items-center justify-between border-t pt-2 text-sm font-bold">
@@ -1004,7 +1003,7 @@ export default function OrdersIndex({ orders, products, filters }: Props) {
                                                     <div key={item.id} className="flex items-center gap-3 rounded border p-3">
                                                         {item.product.photos.length > 0 ? (
                                                             <img
-                                                                src={item.product.photos[0].photo_url}
+                                                                src={item.product.photos[0].url}
                                                                 alt={item.product.name}
                                                                 className="h-12 w-12 rounded object-cover"
                                                             />
@@ -1038,7 +1037,7 @@ export default function OrdersIndex({ orders, products, filters }: Props) {
                                                                     <span>{formatCurrency(orderSubtotal)}</span>
                                                                 </div>
                                                                 <div className="flex items-center justify-between text-sm">
-                                                                    <span>Pajak (10%):</span>
+                                                                    <span>Pajak ({TAX_RATE * 100}%):</span>
                                                                     <span>{formatCurrency(orderTax)}</span>
                                                                 </div>
                                                                 <div className="flex items-center justify-between border-t pt-2 text-lg font-bold">
