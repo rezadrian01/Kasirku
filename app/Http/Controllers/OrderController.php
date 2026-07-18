@@ -77,8 +77,11 @@ class OrderController extends Controller
 
       $products = Product::with('photos')->get();
 
-      // Return JSON for AJAX requests (infinite scroll)
-      if ($request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+      // Return JSON for AJAX requests (infinite scroll). Inertia visits also
+      // set X-Requested-With via axios, so exclude them explicitly or every
+      // Inertia navigation to this page would get raw JSON instead of a
+      // proper Inertia response.
+      if (!$request->header('X-Inertia') && ($request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest')) {
         return response()->json([
           'orders' => $orders,
           'products' => $products,

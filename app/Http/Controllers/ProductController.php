@@ -39,8 +39,9 @@ class ProductController extends Controller
 
         $categories = Category::all();
 
-        // Return JSON for AJAX requests (infinite scroll) - hanya untuk request dengan page parameter
-        if (($request->wantsJson() || $request->ajax()) && $request->has('page') && $request->page > 1) {
+        // Return JSON for AJAX requests (infinite scroll) - hanya untuk request dengan page parameter.
+        // Exclude Inertia visits (X-Inertia header) since axios also sets X-Requested-With.
+        if (!$request->header('X-Inertia') && ($request->wantsJson() || $request->ajax()) && $request->has('page') && $request->page > 1) {
             return response()->json([
                 'products' => $products->items(),
                 'pagination' => [

@@ -9,6 +9,31 @@ test('guests cannot access order management', function () {
     $this->get('/admin/orders')->assertRedirect('/login');
 });
 
+test('an Inertia navigation to the orders page gets a real Inertia response, not raw JSON', function () {
+    $this->actingAs(User::factory()->create());
+
+    // Mirrors the headers axios/Inertia's client actually sends on a visit,
+    // including a matching asset version so the request isn't intercepted
+    // as a stale-version conflict before reaching the controller.
+    $version = file_exists($manifest = public_path('build/manifest.json'))
+        ? hash_file('xxh128', $manifest)
+        : null;
+
+    $response = $this->withHeaders([
+        'X-Inertia' => 'true',
+        'X-Inertia-Version' => $version,
+        'X-Requested-With' => 'XMLHttpRequest',
+    ])->get('/admin/orders');
+
+    // assertInertia() only understands the full-page-load (view-based) shape,
+    // not the XHR/partial-reload response this deliberately exercises — so
+    // assert directly on the envelope Inertia's client actually expects.
+    $response->assertOk();
+    $response->assertHeader('X-Inertia', 'true');
+    $response->assertJsonStructure(['component', 'props', 'url', 'version']);
+    $response->assertJson(['component' => 'admin/orders/index']);
+});
+
 test('order list shows the frozen item price, not the current product price', function () {
     $this->actingAs(User::factory()->create());
     $product = Product::factory()->create(['price' => 10000]);
