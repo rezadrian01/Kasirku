@@ -115,3 +115,34 @@ test('category count is unaffected by unrelated data', function () {
 
     $response->assertInertia(fn ($page) => $page->where('stats.total_categories', 3));
 });
+
+test('dashboard includes a 14-day revenue trend ending today', function () {
+    $this->actingAs(User::factory()->create());
+
+    $order = Order::factory()->create();
+    Payment::factory()->completed()->create(['order_id' => $order->id, 'amount' => 17500, 'paid_at' => today()]);
+
+    $response = $this->get('/admin/dashboard');
+
+    $response->assertInertia(fn ($page) => $page
+        ->has('revenueTrend', 14)
+        ->where('revenueTrend.13.date', today()->toDateString())
+        ->where('revenueTrend.13.revenue', 17500)
+        ->where('revenueTrend.0.date', today()->subDays(13)->toDateString())
+    );
+});
+
+test('dashboard breaks orders down by status for the chart', function () {
+    $this->actingAs(User::factory()->create());
+
+    Order::factory()->create(['status' => 'pending']);
+    Order::factory()->count(2)->create(['status' => 'completed']);
+
+    $response = $this->get('/admin/dashboard');
+
+    $response->assertInertia(fn ($page) => $page
+        ->where('ordersByStatus.0', ['status' => 'pending', 'label' => 'Pending', 'count' => 1])
+        ->where('ordersByStatus.1', ['status' => 'completed', 'label' => 'Completed', 'count' => 2])
+        ->where('ordersByStatus.2', ['status' => 'cancelled', 'label' => 'Cancelled', 'count' => 0])
+    );
+});

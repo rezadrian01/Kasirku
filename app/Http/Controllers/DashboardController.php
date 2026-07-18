@@ -50,6 +50,25 @@ class DashboardController extends Controller
                 'created_at' => $order->created_at,
             ]);
 
+        $revenueTrend = collect(range(13, 0))
+            ->map(function (int $daysAgo) {
+                $date = today()->subDays($daysAgo);
+
+                return [
+                    'date' => $date->toDateString(),
+                    'revenue' => (float) Payment::where('status', 'completed')
+                        ->whereDate('paid_at', $date)
+                        ->sum('amount'),
+                ];
+            })
+            ->values();
+
+        $ordersByStatusChart = [
+            ['status' => 'pending', 'label' => 'Pending', 'count' => $statusCounts['pending']],
+            ['status' => 'completed', 'label' => 'Completed', 'count' => $statusCounts['completed']],
+            ['status' => 'cancelled', 'label' => 'Cancelled', 'count' => $statusCounts['cancelled']],
+        ];
+
         return Inertia::render('admin/dashboard/index', [
             'stats' => [
                 'total_revenue' => (float) Payment::where('status', 'completed')->sum('amount'),
@@ -66,6 +85,8 @@ class DashboardController extends Controller
             ],
             'topProducts' => $topProducts,
             'recentOrders' => $recentOrders,
+            'revenueTrend' => $revenueTrend,
+            'ordersByStatus' => $ordersByStatusChart,
         ]);
     }
 }

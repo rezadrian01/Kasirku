@@ -1,3 +1,6 @@
+import { OrdersByStatusChart } from '@/components/dashboard/orders-by-status-chart';
+import { RevenueTrendChart } from '@/components/dashboard/revenue-trend-chart';
+import { TopProductsChart } from '@/components/dashboard/top-products-chart';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -5,7 +8,7 @@ import AppLayout from '@/layouts/app-layout';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
-import { CalendarClock, CheckCircle2, Clock, FolderKanban, Package, Receipt, ShoppingCart, Wallet } from 'lucide-react';
+import { CalendarClock, CheckCircle2, Clock, FolderKanban, Package, Receipt, ShoppingCart, TrendingUp, Wallet } from 'lucide-react';
 
 interface Stats {
     total_revenue: number;
@@ -34,10 +37,23 @@ interface RecentOrder {
     created_at: string;
 }
 
+interface RevenuePoint {
+    date: string;
+    revenue: number;
+}
+
+interface OrderStatusPoint {
+    status: 'pending' | 'completed' | 'cancelled';
+    label: string;
+    count: number;
+}
+
 interface Props {
     stats: Stats;
     topProducts: TopProduct[];
     recentOrders: RecentOrder[];
+    revenueTrend: RevenuePoint[];
+    ordersByStatus: OrderStatusPoint[];
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -68,7 +84,7 @@ function StatCard({ icon: Icon, label, value, hint }: { icon: typeof Wallet; lab
     );
 }
 
-export default function Dashboard({ stats, topProducts, recentOrders }: Props) {
+export default function Dashboard({ stats, topProducts, recentOrders, revenueTrend, ordersByStatus }: Props) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard" />
@@ -93,6 +109,42 @@ export default function Dashboard({ stats, topProducts, recentOrders }: Props) {
                 <div className="grid gap-4 sm:grid-cols-2">
                     <StatCard icon={Package} label="Total Products" value={stats.total_products.toString()} />
                     <StatCard icon={FolderKanban} label="Total Categories" value={stats.total_categories.toString()} />
+                </div>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-base">
+                            <TrendingUp className="h-4 w-4" />
+                            Revenue — Last 14 Days
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <RevenueTrendChart data={revenueTrend} />
+                    </CardContent>
+                </Card>
+
+                <div className="grid gap-4 lg:grid-cols-2">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-base">Orders by Status</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <OrdersByStatusChart data={ordersByStatus} />
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-base">Top Products by Quantity</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {topProducts.length === 0 ? (
+                                <p className="py-6 text-center text-sm text-muted-foreground">No sales yet</p>
+                            ) : (
+                                <TopProductsChart data={topProducts} />
+                            )}
+                        </CardContent>
+                    </Card>
                 </div>
 
                 <div className="grid gap-4 lg:grid-cols-2">
