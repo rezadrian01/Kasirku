@@ -1,11 +1,34 @@
 <?php
 
 use App\Models\Order;
+use App\Models\OrderItems;
 use App\Models\Product;
 use App\Models\User;
 
 test('guests cannot access order management', function () {
     $this->get('/admin/orders')->assertRedirect('/login');
+});
+
+test('order list shows the frozen item price, not the current product price', function () {
+    $this->actingAs(User::factory()->create());
+    $product = Product::factory()->create(['price' => 10000]);
+    $order = Order::factory()->create();
+    OrderItems::factory()->create([
+        'order_id' => $order->id,
+        'product_id' => $product->id,
+        'quantity' => 2,
+        'price' => 10000,
+        'subtotal' => 20000,
+    ]);
+
+    $product->update(['price' => 99999]);
+
+    $response = $this->get('/admin/orders');
+
+    $response->assertInertia(fn ($page) => $page
+        ->where('orders.data.0.order_items.0.price', 10000)
+        ->where('orders.data.0.order_items.0.subtotal', 20000)
+    );
 });
 
 test('admin can create a cash order with correct tax calculation', function () {

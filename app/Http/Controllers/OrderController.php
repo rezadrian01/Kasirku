@@ -60,8 +60,8 @@ class OrderController extends Controller
                 })
               ],
               'quantity' => $item->quantity,
-              'price' => $item->product->price,
-              'subtotal' => $item->quantity * $item->product->price
+              'price' => $item->price,
+              'subtotal' => $item->subtotal
             ];
           }),
           'payment' => [

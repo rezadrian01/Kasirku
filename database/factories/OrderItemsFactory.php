@@ -31,16 +31,14 @@ class OrderItemsFactory extends Factory
 
     /**
      * Derive price/subtotal from the linked product once it's resolved.
+     * afterMaking runs before create()'s initial insert, so the row is
+     * persisted with the correct values without a second UPDATE query.
      */
     public function configure(): static
     {
         return $this->afterMaking(function (OrderItems $orderItem) {
             $orderItem->price = $orderItem->product->price;
             $orderItem->subtotal = $orderItem->price * $orderItem->quantity;
-        })->afterCreating(function (OrderItems $orderItem) {
-            $orderItem->price = $orderItem->product->price;
-            $orderItem->subtotal = $orderItem->price * $orderItem->quantity;
-            $orderItem->save();
         });
     }
 }

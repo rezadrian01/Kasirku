@@ -63,8 +63,9 @@ class CheckoutController extends Controller
         $subtotalAmount += $itemSubtotal;
       }
 
-      // Calculate tax and total amount
-      $taxAmount = $subtotalAmount * config('pos.tax_rate');
+      // Calculate tax and total amount, rounded to whole IDR so the amount
+      // charged via Midtrans matches what's stored/printed (no truncation).
+      $taxAmount = round($subtotalAmount * config('pos.tax_rate'));
       $totalAmount = $subtotalAmount + $taxAmount;
 
       // Create payment record

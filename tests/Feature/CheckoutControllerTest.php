@@ -55,6 +55,28 @@ test('checkout creates order, order items and a pending payment', function () {
     expect((float) $payment->amount)->toBe(40000 + $expectedTax);
 });
 
+test('checkout rounds fractional tax to whole IDR instead of truncating', function () {
+    fakeMidtransService();
+
+    // 33333 * 0.1 = 3333.3 — truncating (int) would give 3333, losing 0.3.
+    $product = Product::factory()->create(['price' => 33333]);
+
+    $response = $this->postJson('/checkout/process', [
+        'customer_name' => 'Wati',
+        'table_number' => 1,
+        'cart' => [
+            ['product' => ['id' => $product->id], 'quantity' => 1],
+        ],
+    ]);
+
+    $response->assertOk();
+
+    $order = Order::findOrFail($response->json('order_id'));
+    $expectedTax = round(33333 * config('pos.tax_rate'));
+
+    expect((float) $order->payment->amount)->toBe(33333 + $expectedTax);
+});
+
 test('midtrans settlement status marks payment completed and order pending', function () {
     fakeMidtransService();
     $order = Order::factory()->create(['status' => 'pending']);
